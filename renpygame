@@ -1,0 +1,374 @@
+define m = Character(_('Max'))
+define c = Character(_('Caroline'))
+define e = Character(_('Earl'))
+define v = Character(_('Visitor'))
+define h = Character(_('Hann'))
+
+init:
+    image bg apartment = "apartment.png"
+    image bg eatery = im.FactorScale("eatery1.png", 1.5)
+    image vis2 = im.FactorScale("vis1.png", 0.3)
+    image bg street = "street.jpg"
+
+
+
+# The game starts here.
+
+label start:
+
+    $ Max = {"comfort": 50, "job safety": 50, "friendship": 50, "money": 0, "tips": 0, "skill": 0}
+    $ Robbery = {"chance": 0, "profit": 0, "result": 0}
+    $ Cust = {"type": []}
+
+    scene bg apartment with dissolve 
+    "Welcome to the game, player."
+    menu:
+        "Get an instruction.":
+            jump guide
+        "I know what this game is about.":
+            jump morning
+    
+
+
+label guide:
+    scene bg apartment with dissolve 
+    "Welcome to the game, player."
+    "Now you are going to play the game. Your main goal is to save up $250 000 to open your own cafe."
+    show max at right
+    "The name of your character is Max. You work as a waitress in the eatery in Brooklyn. You’re poor, lazy and sarcastic."
+    hide max
+    show caroline at left
+    "You have a roommate named Caroline. She helps you run the cupcake business."
+    hide caroline
+    scene bg eatery
+    show hann
+    "Hann is your boss in the eatery. He is a silly man but don't make too hard jokes on him. He is able to fire you"
+    hide hann
+    scene bg apartment
+    show max at right
+    "Choose actions and try to balance indicators \"comfort\", \"job safety\" and \"friendship\"."
+    "You also have a \"skill\" indicator which affects the money you get from baking cupcakes."
+    "Skipping your shift will increase your comfort indicator and decrease the job safety indicator."
+    "Spending time with Caroline may decrease your comfort but increase your friendship."
+    "Making jokes on people will increase your comfort but do not use it too much, they might get hurt and your relationship will go down"
+    "Be careful, if one of the indicators will drop to zero, you lose."
+    "Choose wisely."
+    jump morning
+
+
+label morning:
+
+    scene bg apartment
+    "The new day has come."
+    menu:
+        "How do you like to spend your day?"
+        "Go to work on time. -- job safety +2 comfort -5":
+            $ Max["job safety"] = Max["job safety"] + 2
+            $ Max["comfort"] = Max["comfort"] - 5
+            if Max["comfort"]<= 0:
+                jump comfort_loss
+            else:
+                jump eatery
+        "Chat with Caroline and be late for work. -- job safety -2 friendship +2":
+            $ Max["job safety"] = Max["job safety"] - 2
+            $ Max["friendship"] = Max["friendship"] + 2
+            if Max["job safety"]<= 0:
+                jump job_safety_loss
+            else:
+                jump chat_Caroline
+        "Spend the whole day with Caroline. -- job safety -10 comfort -10 friendship +10":
+            $ Max["job safety"] = Max["job safety"] - 10
+            $ Max["comfort"] = Max["comfort"] - 10
+            $ Max["friendship"] = Max["friendship"] + 10
+            if Max["job safety"]<= 0:
+                jump job_safety_loss
+            if Max["comfort"]<= 0:
+                jump comfort_loss
+            else:
+                jump caroline_day
+        "Stay in bed for the day. -- job safety -10 comfort +10":
+            $ Max["job safety"] = Max["job safety"] - 10
+            $ Max["comfort"] = Max["comfort"] + 10
+            if Max["job safety"]<= 0:
+                jump job_safety_loss
+            else:
+                jump totals_of_the_day
+        "Rob the bank. There is a huge chance to get caught and go to jail!":
+            $ Robbery["result"] = renpy.random.randint(0, 9)
+            $ Robbery["chance"] = Robbery["chance"] - Robbery["result"]
+            if Robbery["chance"] < 0:
+                jump jail
+            else:
+                $ Robbery["profit"] = renpy.random.randint(150000, 250000)
+                $ Max["money"] = Max["money"] + Robbery["profit"]
+                if Max["money"] >= 250000:
+                    jump win
+                else:
+                    jump totals_of_the_day
+        "Do cupcakes delivery. -- +money, job safety -10.":
+            $ Max["money"] = Max["money"] + 100 + 2*Max["skill"]
+            $ Max["job safety"] = Max["job safety"] - 10
+            $ Cust["type"] = renpy.random.choice(["nice one", "mean one", "norm"])
+            if Cust["type"] == "nice one":
+                "You've got a pleasant customer who gave you 50 bucks tip! Congrats!"
+                $ Max["money"] = Max["money"] + 50
+            elif Cust["type"] == "mean one":
+                "Mean customer refused to pay some of the money. Well, it happens sometimes. Don't worry too much.."
+                "You lost 50 dollars"
+                $ Max["money"] = Max["money"] - 50
+            elif Cust["type"] == "norm":
+                "Everything was okay with this order. You've got your money"
+            if Max["job safety"]<= 0:
+                jump job_safety_loss
+            else:
+                "Good job today! Hann is upset that you didn't show up, but now you have more money and the clients!"
+                jump totals_of_the_day
+
+
+
+
+        
+
+label caroline_day:
+    scene bg apartment
+    show caroline
+    c "Max, when I die, I don't care who's at my funeral, as long as you're there"
+    hide caroline
+    show max
+    m "Of course I'll be there. The killer always comes to the funeral to confuse the cops."
+    hide max
+    show caroline    
+menu:
+        "What would you like to do with Caroline today?"
+        "Stay at home.":
+            jump home_Caroline
+        "Go to business seminar for 100 dollars. skill+100":
+            $ Max["money"] = Max["money"] - 100
+            $ Max["skill"] = Max["skill"] + 100
+            jump totals_of_the_day
+        "Go outside.":
+            jump street
+
+label street:
+    scene bg street
+    show max at right
+    show caroline at left
+    menu:
+        "What would you like to do?"
+        "Go shopping. -- comfort -5, friendship +20":
+            $ Max["comfort"] = Max["comfort"] -5
+       $ Max["friendship"] = Max["friendship"] + 10
+            if Max["comfort"]<= 0:
+                jump comfort_loss
+            else:
+                jump totals_of_the_day
+        "Play the lottery. Jackpot is 200 000 dollars!":
+            $ Max["tips"] = renpy.random.randint(80, 200000)
+            $ Max["money"] = Max["money"] + Max["tips"]
+            "Congratulations! You won [Max[tips]] dollars!"
+            jump totals_of_the_day
+        "Go to see a movie. -- comfort +5, money -10":
+            $ Max["comfort"] = Max["comfort"] + 5
+            $ Max["money"] = Max["money"] - 5
+            jump totals_of_the_day
+
+
+label eatery:
+    scene bg eatery with dissolve
+    show erle
+    "Hey, girl! My congratulations, you are almost on time today. I see you're tired. May be you should take a day off?"
+    menu:
+        "What would you like to answer Erle?"
+        "I need a big sum of money":
+            pass
+        "Yes, I'll take it today (job safety -10, comfort +10)":
+            $ Max["job safety"] = Max["job safety"] - 10
+            $ Max["comfort"] = Max["comfort"] + 10
+            if Max["job safety"]<= 0:
+                jump job_safety_loss
+            else:
+                jump totals_of_the_day
+        "Joke with Erle (friendship +5,comfort +5)":
+            $ Max["friendship"] = Max["friendship"] + 5
+            $ Max["comfort"] = Max["comfort"] + 5
+            "Me:  Why is 2+2=5 like your left foot? It’s not right!"
+            "That's a very strange joke, Max..."
+            pass
+    "OK, the first visitor is coming, you should go"
+    jump vis
+
+label vis:
+    scene bg eatery with dissolve
+    show vis
+    v "Good morning, I need the most delicious hot dog"
+    menu:
+        "Yes, sure, just a minite!":
+            $ Max["job safety"] = Max["job safety"] + 10
+            $ Max["money"] = Max["money"] + 10
+            pass
+        "Shut up nigga":
+            $ Max["job safety"] = Max["job safety"] - 10
+            $ Max["comfort"] = Max["comfort"] + 5
+            if Max["job safety"]<= 0:
+                jump job_safety_loss
+            else:
+                v "Don't be so meant to strangers"
+                hide vis
+                jump work
+    v "Thank you, that money is for you (+20)"
+    $ Max["money"] = Max["money"] + 10
+    hide vis
+    jump work
+
+label work:
+    scene bg eatery with dissolve
+    show hann at left 
+    h "Hi, Earl! Hi, Caroline! Oh, hi, the reason for psychotherapy sessions."
+    hide hann
+    show max at right
+    m "Hann, what's the first rule of our cafe?"
+    hide max
+    show hann at left
+    h "Not to say that meat is fake?"
+    hide hann
+    show max at right
+    m "Quieter! If you see it, it's real."
+    show max at right
+    menu:
+        "What to do now?"
+        "Work hard, be nice with customers and get as many tips as possible. (high tips) -- comfort -10, job safety +10":
+            $ Max["tips"] = renpy.random.randint(80, 200)
+            $ Max["money"] = Max["money"] + Max["tips"]
+            "Good job today! You've got [Max[tips]] dollars! Cupcake business is close."
+            jump totals_of_the_day
+        "Just work, try not to get into trouble. (okay tips) -- comfort -2, job safety +5":
+            $ Max["tips"] = renpy.random.randint(50, 100)
+            $ Max["money"] = Max["money"] + Max["tips"]
+            "Good job today! You've got [Max[tips]] dollars! Cupcake business is close."
+            jump totals_of_the_day
+        "Do nothing but make fun of the customers. (low tips) -- comfort +5, job safety -5":
+            $ Max["tips"] = renpy.random.randint(20, 60)
+            $ Max["money"] = Max["money"] + Max["tips"]
+            "You've got [Max[tips]] dollars! You could have done it better. Try harder next time."
+            jump totals_of_the_day
+
+label eatery1:
+    scene bg eatery with dissolve
+    show erle
+    e "Hey, girl! You're late! Your visitor has already gone away. So, you have missed your cash (-2$). I see you're tired. May be you should take a day off?"
+    menu:
+        "What would you like to answer Earl?"
+        "I need a big sum of money":
+            pass
+        "Yes, I'll take it today (job safety -10, comfort +10)":
+            $ Max["job safety"] = Max["job safety"] - 10
+            $ Max["comfort"] = Max["comfort"] + 10
+            if Max["job safety"]<= 0:
+             jump job_safety_loss
+            else:
+                jump totals_of_the_day
+        "Joke with Earl (friendship +5,comfort +5)":
+            $ Max["friendship"] = Max["friendship"] + 5
+            $ Max["comfort"] = Max["comfort"] + 5
+            "Me:  Why is 2+2=5 like your left foot? It’s not right!"
+            e "That's a very strange joke, Max..."
+            pass
+    e "OK, the next visitor is coming, you should go"
+    jump vis1
+
+label vis1:
+    scene bg eatery with dissolve
+    show vis1
+    v "Good morning, I need some Mac and Cheese"
+    menu:
+        "Yes, sure, just a minute!":
+            $ Max["job safety"] = Max["job safety"] + 10
+            $ Max["money"] = Max["money"] + 10
+            pass
+        "Sorry, I don't want to do this":
+            $ Max["job safety"] = Max["job safety"] - 10
+            $ Max["comfort"] = Max["comfort"] + 5
+            if Max["job safety"]<= 0:
+                jump job_safety_loss
+            else:
+                v "Don’t be so mean with strangers"
+                hide vis1
+                jump work
+    v "Thank you, that money is for you (+20)"
+    $ Max["money"] = Max["money"] + 10
+    jump work
+
+label home_Caroline:
+    scene bg apartment
+    show caroline
+    c "Why do we throw burning matches towards the stove?Is this a game for poor people?"
+    menu:
+        "Yeah. It is called \"Light a broken oven without burning your face\"":
+            $ Max["friendship"] = Max["friendship"] + 5
+            $ Max["comfort"] = Max["comfort"] + 5
+            "Thanks God! I was scared!"
+        "I am sorry, what did you just ask? I always fall asleep when you start talking.":
+          $ Max["friendship"] = Max["friendship"]  - 2
+          $ Max["comfort"] = Max["comfort"] + 5
+          "Oh, Max, you’re so rude!"
+    c "Let's watch a romantic comedy tonight?"
+    menu:
+        "It sounds like a good idea! But i will not console you when the main character broke up with her boyfriend!": 
+            $ Max["friendship"] = Max["friendship"] + 5
+            $ Max["comfort"] = Max["comfort"] + 5
+            "Okay, i promise i won’t cry this time!"
+        "I only watch movies where someone kills someone. How I kill you in my dreams":
+            $ Max["friendship"] = Max["friendship"] - 2
+            $ Max["comfort"] = Max["comfort"] + 5
+            "Max, is it always necessary to hurt my feelings?"  
+
+label chat_Caroline:
+    scene bg apartment
+    show caroline
+    c "Max, sometimes it looks like you love our cat more than anyone in this world!"
+    menu:
+        "Yes, i am. Cats will never leave you for another girl from work!": 
+            $ Max["friendship"] = Max["friendship"] + 5
+            $ Max["comfort"] = Max["comfort"] + 5
+            "Max, do you really compare human love to cat love?"
+            "No, actually. Cat’s love is eternal!"
+        "I do not know, but I love her more than I love you!":
+            $ Max["friendship"] = Max["friendship"] - 2
+            $ Max["comfort"] = Max["comfort"] + 5
+            "Oh Max you’re so funny!"
+    jump eatery1
+
+
+
+
+
+label totals_of_the_day:
+    "Another day of your life has passed."
+    "Comfort [Max[comfort]], Friendship [Max[friendship]], Job safety [Max[job safety]]."
+    "Total money is [Max[money]] dollars."
+    if Max["money"] >= 250000:
+        jump win
+    else:
+        jump morning
+
+label comfort_loss:
+    "OOPS! Your comfort indicator dropped to zero. You got sick and now you have to fight for a living. No time for thinking about cupcake business. The game has ended!"
+    return
+
+label job_safety_loss:
+    "OOPS! Your job safety indicator dropped to zero. You got fired and now you have to fight for a living. No time for thinking about cupcake business. The game has ended!"
+    return
+
+label friendship_loss:
+    "OOPS! Your friendship indicator dropped to zero. Caroline left you and you can't run the business by yourself. The game has ended!"
+    return
+
+label jail:
+    "Bank robbery is a serious crime."
+    "No wonder you got caught."
+    "Now you are in jail. The game has ended!"
+    return
+
+label win:
+    "Congratulations! You saved up enough money to open your own cafe!"
+
